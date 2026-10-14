@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIXEL PALETTE FORGE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0b26;
+    --bg2:#17123d;
+    --panel:#1e1747;
+    --panel-dark:#120e2e;
+    --ink:#efe9ff;
+    --dim:#8f86c9;
+    --magenta:#ff2e88;
+    --cyan:#29f3ff;
+    --yellow:#ffd926;
+    --green:#3dff8f;
+    --red:#ff4444;
+    --border:#060412;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(255,46,136,.14), transparent 40%),
+      radial-gradient(circle at 85% 20%, rgba(41,243,255,.12), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(255,217,38,.08), transparent 45%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 2px, transparent 2px 4px);
+    color:var(--ink);
+    font-family:'Press Start 2P', monospace;
+    min-height:100vh;
+    padding:18px;
+    font-size:10px;
+    line-height:1.6;
+  }
+  /* scanline / CRT overlay */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+    mix-blend-mode:multiply;
+  }
+  .cabinet{max-width:1180px;margin:0 auto;}
+  /* ---------- header ---------- */
+  header{
+    background:linear-gradient(180deg,#2b2166,#191343);
+    border:4px solid #000;
+    box-shadow:0 0 0 2px var(--magenta), 8px 8px 0 #000;
+    padding:16px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    position:relative;overflow:hidden;
+  }
+  header::before{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg, rgba(41,243,255,.07) 0 8px, transparent 8px 16px);
+    pointer-events:none;
+  }
+  .title{font-size:16px;color:var(--yellow);text-shadow:3px 3px 0 var(--magenta), 6px 6px 0 #000;letter-spacing:1px;position:relative;}
+  .title small{display:block;font-size:8px;color:var(--cyan);text-shadow:2px 2px 0 #000;margin-top:10px;}
+  .coin{font-size:9px;color:var(--green);text-shadow:2px 2px 0 #000;animation:blink 1.1s steps(2) infinite;position:relative;text-align:right;}
+  @keyframes blink{50%{opacity:0;}}
+  /* ---------- layout ---------- */
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:18px;margin-top:18px;}
+  @media(max-width:980px){.grid{grid-template-columns:1fr;}}
+  .panel{
+    background:var(--panel);
+    border:4px solid #000;
+    box-shadow:0 0 0 2px #4a3fa3, 8px 8px 0 #000;
+    padding:16px;
+    position:relative;
+  }
+  .panel h2{
+    margin:0 0 14px;font-size:10px;color:var(--cyan);
+    background:#0c0925;border:3px solid #000;box-shadow:inset 0 0 0 2px #2c2570;
+    padding:10px;text-align:center;letter-spacing:1px;
+  }
+  .panel h2 .dot{color:var(--magenta);}
+  /* ---------- controls ---------- */
+  .row{margin-bottom:16px;}
+  label.lbl{display:block;font-size:8px;color:var(--dim);margin-bottom:8px;letter-spacing:.5px;}
+  label.lbl b{color:var(--yellow);}
+  .color-row{display:flex;gap:10px;align-items:stretch;}
+  input[type=color]{
+    width:64px;height:52px;padding:0;border:4px solid #000;background:#000;cursor:pointer;flex-shrink:0;
+    image-rendering:pixelated;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+  input[type=color]::-webkit-color-swatch{border:none;}
+  #hexField{
+    flex:1;min-width:0;background:#0c0925;color:var(--green);border:3px solid #000;
+    box-shadow:inset 0 0 0 2px #2c2570;font-family:inherit;font-size:12px;padding:0 10px;
+    text-transform:uppercase;outline:none;
+  }
+  #hexField:focus{box-shadow:inset 0 0 0 2px var(--cyan);}
+  button{
+    font-family:inherit;cursor:pointer;border:3px solid #000;color:#0c0925;
+    padding:12px 10px;font-size:8px;line-height:1.5;
+    box-shadow:4px 4px 0 #000;image-rendering:pixelated;
+  }
+  button:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000;}
+  .btn-drop{background:var(--cyan);width:100%;margin-top:10px;}
+  .btn-add{background:var(--green);width:100%;}
+  .btn-png{background:var(--magenta);color:#fff;flex:1;}
+  .btn-json{background:var(--yellow);flex:1;}
+  .btn-clear{background:var(--red);color:#fff;width:100%;margin-top:10px;}
+  .slider-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .slider-head span{font-size:8px;color:var(--dim);}
+  .val{
+    font-size:9px;background:#0c0925;border:2px solid #000;box-shadow:inset 0 0 0 1px #2c2570;
+    padding:5px 8px;color:var(--yellow);min-width:64px;text-align:center;
+  }
+  input[type=range]{width:100%;appearance:none;-webkit-appearance:none;height:14px;background:#0c0925;border:3px solid #000;outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:26px;background:var(--magenta);
+    border:3px solid #000;box-shadow:2px 2px 0 #000;cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{width:14px;height:22px;background:var(--magenta);border:3px solid #000;border-radius:0;}
+  input[type=range].cyan::-webkit-slider-thumb{background:var(--cyan);}
+  input[type=range].yellow::-webkit-slider-thumb{background:var(--yellow);}
+  .ticks{display:flex;justify-content:space-between;font-size:7px;color:#5d55a0;margin-top:4px;}
+  /* ---------- ramp ---------- */
+  #ramp{display:flex;gap:0;border:4px solid #000;box-shadow:4px 4px 0 #000;overflow:hidden;}
+  .swatch{
+    flex:1;height:92px;cursor:pointer;position:relative;border-right:3px solid #000;
+    display:flex;align-items:flex-end;justify-content:center;
+    transition:filter .08s;
+  }
+  .swatch:last-child{border-right:none;}
+  .swatch:hover{filter:brightness(1.25);}
+  .swatch span{
+    font-size:7px;background:rgba(0,0,0,.75);color:#fff;padding:4px 3px;margin-bottom:6px;
+    pointer-events:none;word-break:break-all;text-align:center;max-width:94%;
+  }
+  .hint{font-size:7px;color:#5d55a0;margin-top:10px;text-align:center;}
+  /* ---------- sphere ---------- */
+  .stage{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}
+  .screen{
+    background:#0c0925;border:4px solid #000;box-shadow:inset 0 0 0 2px #2c2570, 4px 4px 0 #000;
+    padding:14px;text-align:center;flex-shrink:0;
+  }
+  .screen p{font-size:7px;color:var(--dim);margin:10px 0 0;}
+  .screen p b{color:var(--green);}
+  #sphere{
+    width:200px;height:200px;image-rendering:pixelated;image-rendering:crisp-edges;
+    background:transparent;
+  }
+  .readout{flex:1;min-width:220px;}
+  #rampInfo{font-size:8px;color:var(--green);background:#0c0925;border:3px solid #000;box-shadow:inset 0 0 0 2px #2c2570;padding:12px;word-break:break-all;min-height:78px;}
+  .stat-chips{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .chip{flex:1;min-width:120px;background:#0c0925;border:3px solid #000;box-shadow:inset 0 0 0 2px #2c2570;padding:10px;text-align:center;}
+  .chip .n{font-size:14px;color:var(--yellow);display:block;margin-bottom:6px;}
+  .chip .t{font-size:7px;color:var(--dim);}
+  /* ---------- master palette ---------- */
+  .master-wrap{margin-top:18px;}
+  #masterList{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow-y:auto;padding-right:4px;}
+  .saved{
+    background:#0c0925;border:3px solid #000;box-shadow:inset 0 0 0 2px #2c2570;
+    padding:10px;display:flex;gap:10px;align-items:stretch;
+  }
+  .saved .meta{font-size:7px;color:var(--dim);min-width:74px;display:flex;flex-direction:column;justify-content:center;gap:6px;}
+  .saved .meta b{color:var(--cyan);font-size:8px;}
+  .strip{flex:1;display:flex;border:3px solid #000;overflow:hidden;min-height:44px;}
+  .cell{flex:1;cursor:pointer;min-width:18px;}
+  .cell:hover{filter:brightness(1.35);outline:2px solid #fff;outline-offset:-2px;}
+  .del{background:var(--red);color:#fff;padding:0 12px;font-size:10px;}
+  .empty{font-size:8px;color:#5d55a0;text-align:center;padding:22px;border:3px dashed #4a3fa3;}
+  .export-row{display:flex;gap:10px;margin-top:14px;}
+  /* ---------- log ---------- */
+  #log{
+    margin-top:14px;background:#060412;border:3px solid #000;box-shadow:inset 0 0 0 2px #1d1850;
+    height:110px;overflow-y:auto;padding:10px;font-size:8px;color:var(--green);
+  }
+  #log div{margin-bottom:6px;}
+  #log .warn{color:var(--yellow);}
+  #log .err{color:var(--red);}
+  #log .cy{color:var(--cyan);}
+  /* ---------- screen picker overlay ---------- */
+  #pickOverlay{
+    display:none;position:fixed;inset:0;z-index:100;background:#000;
+    cursor:crosshair;user-select:none;
+  }
+  #pickOverlay.open{display:block;}
+  #pickImg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  #pickZoom{
+    position:absolute;width:150px;height:150px;image-rendering:pixelated;image-rendering:crisp-edges;
+    border:4px solid #000;box-shadow:0 0 0 2px var(--cyan), 6px 6px 0 #000;
+    pointer-events:none;display:none;background:#000;
+  }
+  #pickHex{
+    position:absolute;pointer-events:none;display:none;background:#000;color:#fff;
+    border:3px solid #000;box-shadow:0 0 0 2px var(--yellow);
+    font-size:9px;padding:6px 8px;white-space:nowrap;
+  }
+  #pickHint{
+    position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+    background:#000;border:3px solid #000;box-shadow:0 0 0 2px var(--magenta);
+    color:var(--yellow);font-size:8px;padding:10px 14px;pointer-events:none;white-space:nowrap;
+  }
+  footer{margin-top:14px;text-align:center;font-size:7px;color:#5d55a0;}
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:#0c0925;}
+  ::-webkit-scrollbar-thumb{background:var(--magenta);border:2px solid #000;}
+</style>
+</head>
+<body>
+<div class="cabinet">
+
+  <header>
+    <div class="title">◄ PIXEL PALETTE FORGE ►<small>// RAMP GENERATOR + MASTER PALETTE v1.0</small></div>
+    <div class="coin">● INSERT COIN<br><br>▶ PRESS START ◀</div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: controls -->
+    <section class="panel">
+      <h2><span class="dot">■</span> 01 // BASE COLOR</h2>
+
+      <div class="row">
+        <label class="lbl" for="baseColor">PICK YOUR FIGHTER <b>(BASE)</b></label>
+        <div class="color-row">
+          <input type="color" id="baseColor" value="#7B5CFF">
+          <input type="text" id="hexField" value="#7B5CFF" maxlength="7" spellcheck="false" aria-label="HEX code">
+        </div>
+        <button class="btn-drop" id="eyeBtn">◉ EYEDROPPER</button>
+      </div>
+
+      <h2><span class="dot">■</span> 02 // RAMP ENGINE</h2>
+
+      <div class="row">
+        <div class="slider-head"><span>SHADOW SHIFT (HUE)</span><span class="val" id="shadowVal">-24°</span></div>
+        <input type="range" id="shadowShift" min="-60" max="0" value="-24" step="1">
+        <div class="ticks"><span>-60°</span><span>-30°</span><span>0°</span></div>
+      </div>
+
+      <div class="row">
+        <div class="slider-head"><span>LIGHT SHIFT (HUE)</span><span class="val" id="lightVal">+24°</span></div>
+        <input type="range" id="lightShift" class="cyan" min="0" max="60" value="24" step="1">
+        <div class="ticks"><span>0°</span><span>+30°</span><span>+60°</span></div>
+      </div>
+
+      <div class="row" style="margin-bottom:0">
+        <div class="slider-head"><span>RAMP STEPS</span><span class="val" id="stepsVal">5</span></div>
+        <input type="range" id="steps" class="yellow" min="3" max="8" value="5" step="1">
+        <div class="ticks"><span>3</span><span>5</span><span>8</span></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: preview -->
+    <section class="panel">
+      <h2><span class="dot">■</span> 03 // LIVE RAMP // CLICK TO COPY</h2>
+      <div id="ramp"></div>
+      <div class="hint">* CLICK ANY SWATCH TO COPY ITS HEX *</div>
+
+      <h2 style="margin-top:18px"><span class="dot">■</span> 04 // MATERIAL MONITOR</h2>
+      <div class="stage">
+        <div class="screen">
+          <canvas id="sphere" width="40" height="40"></canvas>
+          <p>MAT: <b>ORB-40</b> // LIT ↖ TOP-LEFT</p>
+        </div>
+        <div class="readout">
+          <div id="rampInfo">—</div>
+          <div class="stat-chips">
+            <div class="chip"><span class="n" id="statColors">0</span><span class="t">SAVED COLORS</span></div>
+            <div class="chip"><span class="n" id="statRamps">0</span><span class="t">SAVED RAMPS</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- BOTTOM: master palette -->
+  <section class="panel master-wrap">
+    <h2><span class="dot">■</span> 05 // MASTER PALETTE SHELF</h2>
+    <button class="btn-add" id="addBtn">＋ ADD CURRENT RAMP TO SHELF</button>
+    <div style="height:14px"></div>
+    <div id="masterList"><div class="empty">-- SHELF EMPTY --<br><br>GENERATE A RAMP + PRESS [+ ADD]</div></div>
+    <div class="export-row">
+      <button class="btn-png" id="pngBtn">▼ EXPORT .PNG (ASEPRITE)</button>
+      <button class="btn-json" id="jsonBtn">{ } COPY JSON</button>
+    </div>
+    <button class="btn-clear" id="clearBtn">✕ CLEAR MASTER PALETTE</button>
+    <div id="log"></div>
+  </section>
+
+  <footer>PIXEL PALETTE FORGE // 1PX-STRIP PNG → ASEPRITE IMPORT // BUILT WITH PYWEBVIEW ♥</footer>
+</div>
+
+<div id="pickOverlay">
+  <img id="pickImg" alt="screen capture">
+  <canvas id="pickZoom" width="150" height="150"></canvas>
+  <div id="pickHex">#000000</div>
+  <div id="pickHint">◉ CLICK = SAMPLE &nbsp;//&nbsp; ESC / RIGHT-CLICK = CANCEL</div>
+</div>
+
+<script>
+"use strict";
+/* ================= state ================= */
+const $ = (id) => document.getElementById(id);
+const baseColor = $("baseColor"), hexField = $("hexField");
+const shadowShift = $("shadowShift"), lightShift = $("lightShift"), stepsEl = $("steps");
+const shadowVal = $("shadowVal"), lightVal = $("lightVal"), stepsVal = $("stepsVal");
+const rampEl = $("ramp"), rampInfo = $("rampInfo");
+const masterList = $("masterList");
+const statColors = $("statColors"), statRamps = $("statRamps");
+const logEl = $("log");
+
+let currentRamp = [];
+let masterPalette = []; // array of ramps (each ramp = array of HEX strings)
+
+/* ================= log ================= */
+function log(msg, cls) {
+  const d = document.createElement("div");
+  if (cls) d.className = cls;
+  d.textContent = "> " + msg;
+  logEl.prepend(d);
+  while (logEl.children.length > 60) logEl.lastChild.remove();
+}
+
+/* ================= color math ================= */
+function clamp01(v){ return Math.min(1, Math.max(0, v)); }
+
+function hexToHsl(hex) {
+  hex = hex.replace("#", "");
+  if (hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+      case g: h = ((b - r) / d + 2); break;
+      default: h = ((r - g) / d + 4);
+    }
+    h *= 60;
+  }
+  return { h: (h + 360) % 360, s: clamp01(s), l: clamp01(l) };
+}
+
+function hslToHex(h, s, l) {
+  h = ((h % 360) + 360) % 360;
+  s = clamp01(s); l = clamp01(l);
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let rp = 0, gp = 0, bp = 0;
+  if (h < 60)      { rp = c; gp = x; bp = 0; }
+  else if (h < 120){ rp = x; gp = c; bp = 0; }
+  else if (h < 180){ rp = 0; gp = c; bp = x; }
+  else if (h < 240){ rp = 0; gp = x; bp = c; }
+  else if (h < 300){ rp = x; gp = 0; bp = c; }
+  else             { rp = c; gp = 0; bp = x; }
+  const to = (v) => Math.round((v + m) * 255).toString(16).padStart(2, "0").toUpperCase();
+  return "#" + to(rp) + to(gp) + to(bp);
+}
+
+function normalizeHex(v) {
+  v = v.trim().toUpperCase();
+  if (!v.startsWith("#")) v = "#" + v;
+  if (/^#[0-9A-F]{3}$/.test(v)) v = "#" + v.slice(1).split("").map(c => c + c).join("");
+  return /^#[0-9A-F]{6}$/.test(v) ? v : null;
+}
+
+/* ---- ramp generation ----
+   middle index = base color. Below middle: shadow hue shift,
+   lightness down, saturation up. Above middle: light hue shift,
+   lightness up, saturation down. */
+function generateRamp(baseHex, shadow, light, nSteps) {
+  const base = hexToHsl(baseHex);
+  const middle = Math.floor(nSteps / 2);
+  const darkSpan = middle === 0 ? 1 : middle;
+  const lightSpan = (nSteps - 1 - middle) === 0 ? 1 : (nSteps - 1 - middle);
+  const out = [];
+  for (let i = 0; i < nSteps; i++) {
+    let h, s, l;
+    if (i < middle) {
+      const f = (middle - i) / darkSpan;            // 0..1 (1 = darkest tip)
+      h = base.h + shadow * f;
+      s = clamp01(base.s + 0.28 * f);
+      l = clamp01(base.l * (1 - 0.78 * f));
+    } else if (i > middle) {
+      const f = (i - middle) / lightSpan;           // 0..1 (1 = lightest tip)
+      h = base.h + light * f;
+      s = clamp01(base.s * (1 - 0.5 * f));
+      l = clamp01(base.l + (1 - base.l) * 0.78 * f);
+    } else {
+      h = base.h; s = base.s; l = base.l;
+    }
+    out.push(hslToHex(h, s, l));
+  }
+  return out;
+}
+
+/* ================= render ramp ================= */
+function renderRamp() {
+  const shadow = parseInt(shadowShift.value, 10);
+  const light = parseInt(lightShift.value, 10);
+  const n = parseInt(stepsEl.value, 10);
+  shadowVal.textContent = shadow + "°";
+  lightVal.textContent = "+" + light + "°";
+  stepsVal.textContent = n;
+
+  const base = normalizeHex(hexField.value) || normalizeHex(baseColor.value) || "#7B5CFF";
+  currentRamp = generateRamp(base, shadow, light, n);
+
+  rampEl.innerHTML = "";
+  currentRamp.forEach((hex) => {
+    const d = document.createElement("div");
+    d.className = "swatch";
+    d.style.background = hex;
+    d.title = hex + " (click to copy)";
+    const s = document.createElement("span");
+    s.textContent = hex;
+    d.appendChild(s);
+    d.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(hex); }
+      catch (e) {
+        const ta = document.createElement("textarea");
+        ta.value = hex; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (_) {}
+        ta.remove();
+      }
+      log("COPIED " + hex, "cy");
+    });
+    rampEl.appendChild(d);
+  });
+
+  rampInfo.textContent = "RAMP[" + n + "] :: " + currentRamp.join(" ");
+  drawSphere(currentRamp);
+}
+
+/* ================= pixel sphere ================= */
+function drawSphere(ramp) {
+  const cv = $("sphere");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height; // 40x40
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H / 2, R = 17;
+  // light from top-left, slightly front
+  const inv = 1 / Math.hypot(-0.55, -0.55, 0.83);
+  const Lx = -0.55 * inv, Ly = -0.55 * inv, Lz = 0.83 * inv;
+  const n = ramp.length;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const dx = x - cx + 0.5, dy = y - cy + 0.5;
+      const dist = Math.hypot(dx, dy);
+      if (dist > R) continue;
+      // 1px outline ring
+      if (dist > R - 1.2) { ctx.fillStyle = "#060412"; ctx.fillRect(x, y, 1, 1); continue; }
+      const nz = Math.sqrt(Math.max(0, R * R - dx * dx - dy * dy)) / R;
+      const nx = dx / R, ny = dy / R;
+      let dot = nx * Lx + ny * Ly + nz * Lz;   // ~ -1..1
+      dot = clamp01((dot + 0.15) / 1.15);      // soften shadow floor
+      let idx = Math.floor(dot * n);
+      if (idx >= n) idx = n - 1;
+      ctx.fillStyle = ramp[idx];
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  // specular sparkle (top-left), snapped to pixels
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  const spark = [[13,10],[14,10],[15,11],[13,11],[14,11],[14,12],[12,11]];
+  spark.forEach(([x, y]) => {
+    const dx = x - cx, dy = y - cy;
+    if (Math.hypot(dx, dy) < R - 2.5) ctx.fillRect(x, y, 1, 1);
+  });
+  // dither dots on terminator for retro banding feel
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  for (let y = 0; y < H; y += 2) {
+    for (let x = (y % 4 === 0 ? 0 : 1); x < W; x += 2) {
+      const dx = x - cx + 0.5, dy = y - cy + 0.5;
+      const dist = Math.hypot(dx, dy);
+      if (dist < R - 1.2 && dist > R - 7) ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+/* ================= master palette ================= */
+function updateStats() {
+  const colors = masterPalette.reduce((a, r) => a + r.length, 0);
+  statColors.textContent = colors;
+  statRamps.textContent = masterPalette.length;
+}
+
+function renderMaster() {
+  masterList.innerHTML = "";
+  if (masterPalette.length === 0) {
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.innerHTML = "-- SHELF EMPTY --<br><br>GENERATE A RAMP + PRESS [+ ADD]";
+    masterList.appendChild(d);
+  } else {
+    masterPalette.forEach((ramp, ri) => {
+      const row = document.createElement("div");
+      row.className = "saved";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = "<b>RAMP " + String(ri + 1).padStart(2, "0") + "</b><span>" + ramp.length + " CLR</span>";
+      const strip = document.createElement("div");
+      strip.className = "strip";
+      ramp.forEach((hex) => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.style.background = hex;
+        c.title = hex + " (click to copy)";
+        c.addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText(hex); }
+          catch (e) {
+            const ta = document.createElement("textarea");
+            ta.value = hex; document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); } catch (_) {}
+            ta.remove();
+          }
+          log("COPIED " + hex + " [RAMP " + (ri + 1) + "]", "cy");
+        });
+        strip.appendChild(c);
+      });
+      const del = document.createElement("button");
+      del.className = "del";
+      del.textContent = "✕";
+      del.title = "Delete ramp " + (ri + 1);
+      del.addEventListener("click", () => {
+        masterPalette.splice(ri, 1);
+        renderMaster();
+        log("DELETED RAMP " + (ri + 1), "warn");
+      });
+      row.appendChild(meta);
+      row.appendChild(strip);
+      row.appendChild(del);
+      masterList.appendChild(row);
+    });
+  }
+  updateStats();
+}
+
+/* ================= export ================= */
+async function exportPNG() {
+  const flat = masterPalette.flat();
+  if (flat.length === 0) { log("SHELF EMPTY — NOTHING TO EXPORT", "err"); return; }
+  const cv = document.createElement("canvas");
+  cv.width = flat.length; cv.height = 1;
+  const ctx = cv.getContext("2d");
+  flat.forEach((hex, i) => { ctx.fillStyle = hex; ctx.fillRect(i, 0, 1, 1); });
+  const dataUrl = cv.toDataURL("image/png");
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.save_palette_png) {
+    try {
+      const res = await window.pywebview.api.save_palette_png(dataUrl);
+      if (res && res.ok) log("SAVED PNG → " + res.path, "cy");
+      else if (res && res.cancelled) log("SAVE CANCELLED", "warn");
+      else log("SAVE FAILED: " + ((res && res.error) || "unknown"), "err");
+    } catch (e) { log("SAVE FAILED: " + e, "err"); }
+  } else {
+    // fallback: plain browser download
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = "palette.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    log("BROWSER DOWNLOAD: palette.png (" + flat.length + "PX STRIP)", "warn");
+  }
+}
+
+async function exportJSON() {
+  const flat = masterPalette.flat();
+  if (flat.length === 0) { log("SHELF EMPTY — NOTHING TO EXPORT", "err"); return; }
+  const json = JSON.stringify(flat);
+  try { await navigator.clipboard.writeText(json); }
+  catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = json; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (_) {}
+    ta.remove();
+  }
+  log("JSON COPIED (" + flat.length + " COLORS)", "cy");
+}
+
+/* ================= wiring ================= */
+baseColor.addEventListener("input", () => {
+  hexField.value = baseColor.value.toUpperCase();
+  renderRamp();
+});
+hexField.addEventListener("input", () => {
+  const ok = normalizeHex(hexField.value);
+  if (ok) { baseColor.value = ok; renderRamp(); }
+});
+hexField.addEventListener("change", () => {
+  const ok = normalizeHex(hexField.value);
+  hexField.value = ok || baseColor.value.toUpperCase();
+  renderRamp();
+});
+[shadowShift, lightShift, stepsEl].forEach(el => el.addEventListener("input", renderRamp));
+
+$("eyeBtn").addEventListener("click", async () => {
+  // Chromium browsers: native OS magnifier eyedropper
+  if (window.EyeDropper) {
+    try {
+      const dropper = new EyeDropper();
+      const res = await dropper.open();
+      const ok = normalizeHex(res.sRGBHex);
+      if (ok) {
+        baseColor.value = ok;
+        hexField.value = ok;
+        renderRamp();
+        log("SAMPLED " + ok, "cy");
+      }
+    } catch (e) { log("EYEDROPPER CANCELLED", "warn"); }
+    return;
+  }
+  // Desktop pywebview (e.g. WebKitGTK has no EyeDropper): native screen picker
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.begin_screen_pick) {
+    await nativeScreenPick();
+  } else {
+    log("NO COLOR PICKER AVAILABLE ON THIS PLATFORM", "err");
+  }
+});
+
+/* ---- native screen picker (screenshot overlay + pixel magnifier) ---- */
+const pickOverlay = $("pickOverlay"), pickImg = $("pickImg");
+const pickZoom = $("pickZoom"), pickHex = $("pickHex");
+let pickCanvas = null; // offscreen full-res canvas for exact sampling
+
+async function nativeScreenPick() {
+  log("CAPTURING SCREEN…", "warn");
+  let res;
+  try {
+    res = await window.pywebview.api.begin_screen_pick();
+  } catch (e) { log("CAPTURE FAILED: " + e, "err"); return; }
+  if (!res || !res.ok) {
+    log("CAPTURE FAILED: " + ((res && res.error) || "unknown"), "err");
+    return;
+  }
+  pickCanvas = document.createElement("canvas");
+  pickImg.onload = () => {
+    pickCanvas.width = pickImg.naturalWidth;
+    pickCanvas.height = pickImg.naturalHeight;
+    pickCanvas.getContext("2d", { willReadFrequently: true }).drawImage(pickImg, 0, 0);
+    pickOverlay.classList.add("open");
+    log("PICK A PIXEL // CLICK = SAMPLE, ESC = CANCEL", "cy");
+  };
+  pickImg.src = res.data;
+}
+
+function pickImagePoint(ev) {
+  const r = pickImg.getBoundingClientRect();
+  const fx = pickCanvas.width / r.width, fy = pickCanvas.height / r.height;
+  const sx = Math.floor((ev.clientX - r.left) * fx);
+  const sy = Math.floor((ev.clientY - r.top) * fy);
+  return {
+    x: Math.min(pickCanvas.width - 1, Math.max(0, sx)),
+    y: Math.min(pickCanvas.height - 1, Math.max(0, sy))
+  };
+}
+
+function sampleAt(px, py) {
+  const d = pickCanvas.getContext("2d", { willReadFrequently: true }).getImageData(px, py, 1, 1).data;
+  const to = (v) => v.toString(16).padStart(2, "0").toUpperCase();
+  return "#" + to(d[0]) + to(d[1]) + to(d[2]);
+}
+
+async function closePickOverlay() {
+  pickOverlay.classList.remove("open");
+  pickZoom.style.display = "none";
+  pickHex.style.display = "none";
+  pickImg.removeAttribute("src");
+  pickCanvas = null;
+  try { await window.pywebview.api.end_screen_pick(); } catch (e) {}
+}
+
+pickOverlay.addEventListener("mousemove", (ev) => {
+  if (!pickCanvas || !pickCanvas.width) return;
+  const { x, y } = pickImagePoint(ev);
+  const hex = sampleAt(x, y);
+  // magnifier: 15x15 source region blown up to 150x150
+  const SW = 15;
+  const sx0 = Math.min(Math.max(0, x - 7), pickCanvas.width - SW);
+  const sy0 = Math.min(Math.max(0, y - 7), pickCanvas.height - SW);
+  const zctx = pickZoom.getContext("2d");
+  zctx.imageSmoothingEnabled = false;
+  zctx.clearRect(0, 0, 150, 150);
+  zctx.drawImage(pickCanvas, sx0, sy0, SW, SW, 0, 0, 150, 150);
+  zctx.strokeStyle = "#FF2E88";
+  zctx.lineWidth = 2;
+  zctx.strokeRect(65, 65, 20, 20); // center-pixel marker
+  pickZoom.style.display = "block";
+  pickZoom.style.left = (ev.clientX + 20) + "px";
+  pickZoom.style.top = (ev.clientY + 20) + "px";
+  pickHex.style.display = "block";
+  pickHex.textContent = hex + " ◉ CLICK TO SAMPLE";
+  pickHex.style.background = hex;
+  pickHex.style.left = (ev.clientX + 20) + "px";
+  pickHex.style.top = (ev.clientY + 186) + "px";
+});
+
+pickOverlay.addEventListener("click", async (ev) => {
+  if (ev.button !== 0 || !pickCanvas) return;
+  const { x, y } = pickImagePoint(ev);
+  const hex = sampleAt(x, y);
+  await closePickOverlay();
+  baseColor.value = hex;
+  hexField.value = hex;
+  renderRamp();
+  log("SAMPLED " + hex, "cy");
+});
+
+pickOverlay.addEventListener("contextmenu", async (ev) => {
+  ev.preventDefault();
+  await closePickOverlay();
+  log("PICKER CANCELLED", "warn");
+});
+
+document.addEventListener("keydown", async (ev) => {
+  if (ev.key === "Escape" && pickOverlay.classList.contains("open")) {
+    await closePickOverlay();
+    log("PICKER CANCELLED", "warn");
+  }
+});
+
+$("addBtn").addEventListener("click", () => {
+  masterPalette.push([...currentRamp]);
+  renderMaster();
+  log("SAVED RAMP " + masterPalette.length + " (" + currentRamp.length + " COLORS)");
+});
+$("clearBtn").addEventListener("click", () => {
+  masterPalette = [];
+  renderMaster();
+  log("MASTER PALETTE CLEARED", "warn");
+});
+$("pngBtn").addEventListener("click", exportPNG);
+$("jsonBtn").addEventListener("click", exportJSON);
+
+/* ================= init ================= */
+hexField.value = baseColor.value.toUpperCase();
+renderRamp();
+renderMaster();
+log("SYSTEM BOOT // FORGE ONLINE");
+log("PYWEBVIEW: " + (window.pywebview ? "CONNECTED" : "BROWSER MODE (FALLBACK DL)"), "warn");
+</script>
+</body>
+</html>
